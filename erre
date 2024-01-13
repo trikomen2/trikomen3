@@ -1,0 +1,61 @@
+import telebot
+from telebot import types
+
+bot = telebot.TeleBot('6539318406:AAGw7KP2aFFLy_eov6xFb-ouNoKNryi6wiY')
+
+@bot.message_handler(commands=['start'])
+def handle_start(message):
+    markup = types.ReplyKeyboardMarkup(row_width=2)
+    item_plus = types.KeyboardButton('+')
+    item_minus = types.KeyboardButton('-')
+    item_multiply = types.KeyboardButton('*')
+    item_divide = types.KeyboardButton('/')
+    markup.add(item_plus, item_minus, item_multiply, item_divide)
+    bot.send_message(message.chat.id, 'Введіть 1 число:', reply_markup=markup)
+    bot.register_next_step_handler(message, num1_fun)
+
+def num1_fun(message):
+    try:
+        global num1
+        num1 = float(message.text)
+        bot.send_message(message.chat.id, 'Введіть 2 число:')
+        bot.register_next_step_handler(message, num2_fun)
+    except ValueError:
+        bot.send_message(message.chat.id, 'Помилка: Введіть число.')
+        bot.register_next_step_handler(message, num1_fun)
+
+def num2_fun(message):
+    try:
+        global num2
+        num2 = float(message.text)
+        bot.send_message(message.chat.id, 'Виберіть дію:')
+        bot.register_next_step_handler(message, operi)
+    except ValueError:
+        bot.send_message(message.chat.id, 'Помилка: Введіть число.')
+        bot.register_next_step_handler(message, num2_fun)
+
+def operi(message):
+    global oper
+    oper = message.text
+    try:
+        if oper == "+":
+            result = num1 + num2
+        elif oper == "-":
+            result = num1 - num2
+        elif oper == "*":
+            result = num1 * num2
+        elif oper == "/":
+            if num2 == 0:
+                raise ValueError('Помилка: Ділення на нуль недопустиме')
+            result = num1 / num2
+        else:
+            raise ValueError('Помилка: Невідома операція')
+        bot.send_message(message.chat.id, result)
+        bot.send_message(message.chat.id, 'Перезапуск бота...')
+        handle_start(message)
+    except ValueError as e:
+        bot.send_message(message.chat.id, f'Помилка: {str(e)}')
+        bot.send_message(message.chat.id, 'Перезапуск бота...')
+        handle_start(message)
+
+bot.polling(none_stop=True)
